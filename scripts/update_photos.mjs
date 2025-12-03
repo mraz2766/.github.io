@@ -28,7 +28,7 @@ const formatAperture = (value) => {
 console.log('Starting photo processing script...');
 
 // 1. Get all AVIF and WebP files
-const imageFiles = execSync(`find ${publicPhotosDir} -name "*.avif" -o -name "*.webp"`)
+const imageFiles = execSync(`find ${publicPhotosDir} -name "*.avif" -o -name "*.webp" -o -name "*.jpg"`)
     .toString()
     .split('\n')
     .filter(line => line.length > 0 && !line.includes('.temp.'));

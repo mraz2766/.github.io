@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "src": "/photos/pets/2ba80e5f9cc9d76e3508314200e577fa.avif",
+    "src": "/photos/pets/2ba80e5f9cc9d76e3508314200e577fa.jpg",
     "title": "2ba80e5f9cc9d76e3508314200e577fa",
     "width": 1080,
     "height": 1440,
@@ -16,7 +16,7 @@
   },
   {
     "id": 2,
-    "src": "/photos/pets/6ed909533c3c75f74b7c195c96746af8.avif",
+    "src": "/photos/pets/6ed909533c3c75f74b7c195c96746af8.jpg",
     "title": "6ed909533c3c75f74b7c195c96746af8",
     "width": 960,
     "height": 1440,
@@ -46,7 +46,7 @@
   },
   {
     "id": 4,
-    "src": "/photos/pets/WechatIMG321.avif",
+    "src": "/photos/pets/WechatIMG321.jpg",
     "title": "WechatIMG321",
     "width": 1280,
     "height": 1707,
@@ -61,7 +61,7 @@
   },
   {
     "id": 5,
-    "src": "/photos/pets/WechatIMG837.avif",
+    "src": "/photos/pets/WechatIMG837.jpg",
     "title": "WechatIMG837",
     "width": 6000,
     "height": 4000,
@@ -91,7 +91,7 @@
   },
   {
     "id": 7,
-    "src": "/photos/pets/WechatIMG902.avif",
+    "src": "/photos/pets/WechatIMG902.jpg",
     "title": "WechatIMG902",
     "width": 1216,
     "height": 812,
@@ -106,7 +106,7 @@
   },
   {
     "id": 8,
-    "src": "/photos/pets/WechatIMG903.avif",
+    "src": "/photos/pets/WechatIMG903.jpg",
     "title": "WechatIMG903",
     "width": 810,
     "height": 1216,

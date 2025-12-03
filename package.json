@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "node scripts/update_photos.mjs && vite build",
+        "build": "node scripts/update_photos.mjs && npx vite build",
         "lint": "eslint .",
         "preview": "vite preview",
         "gen-gallery": "node scripts/update-gallery.js"
