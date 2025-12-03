@@ -163,8 +163,8 @@ const Home = () => {
                             </motion.div>
                         </motion.div>
                         
-                        <button style={{...styles.navBtn, left: 'var(--spacing-lg)'}} onClick={handlePrev}>‹</button>
-                        <button style={{...styles.navBtn, right: 'var(--spacing-lg)'}} onClick={handleNext}>›</button>
+                        <button style={{...styles.navBtn, left: 'var(--spacing-lg)'}} onClick={(e) => { e.stopPropagation(); handlePrev(); }}>‹</button>
+                        <button style={{...styles.navBtn, right: 'var(--spacing-lg)'}} onClick={(e) => { e.stopPropagation(); handleNext(); }}>›</button>
                         <button style={styles.closeBtn} onClick={() => setSelectedId(null)}>×</button>
                     </motion.div>
                 )}
