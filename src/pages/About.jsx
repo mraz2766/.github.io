@@ -26,10 +26,13 @@ const About = () => {
                 className="about-image-wrapper"
             >
                 {randomPhoto ? (
-                    <img
+                    <motion.img
                         src={randomPhoto.src}
                         alt={randomPhoto.title || 'Gallery Image'}
                         style={styles.image}
+                        initial={{ scale: 1.1 }}
+                        animate={{ scale: 1.0 }}
+                        transition={{ duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" }} // Ken Burns effect
                     />
                 ) : (
                     <div style={styles.placeholder} />
@@ -90,20 +93,22 @@ const styles = {
         gap: '0.8rem',
     },
     label: {
-        fontSize: '0.75rem',
+        fontSize: '0.85rem',
         textTransform: 'uppercase',
-        letterSpacing: '0.15em',
+        letterSpacing: '0.2em',
         color: 'var(--text-secondary)',
-        fontWeight: '600',
+        fontWeight: '500',
+        fontFamily: "'Playfair Display', serif", // Editorial touch
+        fontStyle: 'italic',
     },
     email: {
-        fontSize: '1.2rem',
+        fontSize: '1.4rem',
         color: 'var(--text-primary)',
         textDecoration: 'none',
         fontWeight: '400',
         borderBottom: '1px solid transparent',
         transition: 'border-color 0.2s',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Playfair Display', serif", // Editorial touch
     }
 };
 
