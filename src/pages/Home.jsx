@@ -1,76 +1,102 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import photosData from '../photos.json';
 
-// Simple shuffle function
+// Utility to shuffle array
 const shuffleArray = (array) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
     }
-    return newArray;
+    return newArr;
 };
 
-// Fallback data if json is empty or fails
-const defaultPhotos = [
-    { 
-        id: 1, 
-        src: 'https://images.unsplash.com/photo-1493863641943-9b68992a_d07?auto=format&fit=crop&w=1600&q=80', 
-        title: 'Sample: Urban Solitude', 
-        width: 1600,
-        height: 1067,
-        category: 'General',
-        exif: { camera: 'Fujifilm X-T4', lens: 'XF 35mm f/1.4', iso: '400', aperture: 'f/2.8', shutter: '1/125s' }
-    }
-];
-
-const photos = (photosData && photosData.length > 0) ? photosData : defaultPhotos;
-const RANDOM_PHOTO_COUNT = 9;
-
-const ExifItem = ({ label, value }) => (
-    <div>
-        <span style={styles.exifLabel}>{label}</span>
-        <span style={styles.exifValue}>{value || 'N/A'}</span>
-    </div>
-);
-
 const Home = () => {
+    const [photos, setPhotos] = useState([]);
+    const [displayPhotos, setDisplayPhotos] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
-    const [activeCategory, setActiveCategory] = useState('Home');
-    const [randomPhotos, setRandomPhotos] = useState([]);
+    const [filter, setFilter] = useState('All');
+    // Theme state: 'light' or 'dark'
+    const [theme, setTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('theme') || 'light';
+        }
+        return 'light';
+    });
 
-    // Set initial random photos on component mount
+    // Toggle Theme
+    const toggleTheme = () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+    };
+
+    // Load Data
     useEffect(() => {
-        setRandomPhotos(shuffleArray(photos).slice(0, RANDOM_PHOTO_COUNT));
+        fetch('/src/photos.json')
+            .then(res => res.json())
+            .then(data => {
+                setPhotos(data);
+                setDisplayPhotos(shuffleArray(data));
+            })
+            .catch(err => console.error("Failed to load photos:", err));
+
+        // Inject Fonts
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        return () => document.head.removeChild(link);
     }, []);
 
-    const categories = useMemo(() => ['Home', 'All', ...new Set(photos.map(p => p.category))], []);
-    
-    const filteredPhotos = useMemo(() => {
-        if (activeCategory === 'Home') {
-            return randomPhotos;
+    // Apply Theme Variables
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.style.setProperty('--bg-color', '#000000');
+            root.style.setProperty('--text-primary', '#f5f5f7');
+            root.style.setProperty('--text-secondary', '#86868b');
+            root.style.setProperty('--btn-bg', 'rgba(255,255,255,0.1)');
+            root.style.setProperty('--btn-bg-active', '#fff');
+            root.style.setProperty('--btn-text-active', '#000');
+            root.style.setProperty('--lightbox-bg', 'rgba(0,0,0,0.92)');
+            root.style.setProperty('--glass-bg', 'rgba(20,20,20,0.7)');
+            root.style.setProperty('--glass-border', 'rgba(255,255,255,0.1)');
+        } else {
+            root.style.setProperty('--bg-color', '#ffffff');
+            root.style.setProperty('--text-primary', '#1d1d1f');
+            root.style.setProperty('--text-secondary', '#86868b');
+            root.style.setProperty('--btn-bg', 'rgba(0,0,0,0.05)');
+            root.style.setProperty('--btn-bg-active', '#1d1d1f');
+            root.style.setProperty('--btn-text-active', '#fff');
+            root.style.setProperty('--lightbox-bg', 'rgba(255,255,255,0.95)');
+            root.style.setProperty('--glass-bg', 'rgba(255,255,255,0.8)');
+            root.style.setProperty('--glass-border', 'rgba(0,0,0,0.05)');
         }
-        if (activeCategory === 'All') {
-            return shuffleArray(photos);
-        }
-        const categoryPhotos = photos.filter(p => p.category === activeCategory);
-        return shuffleArray(categoryPhotos);
-    }, [activeCategory, randomPhotos]);
+    }, [theme]);
 
+    // Handle Filter
+    useEffect(() => {
+        if (photos.length === 0) return;
+        let filtered = filter === 'All' ? photos : photos.filter(p => p.category === filter);
+        setDisplayPhotos(shuffleArray(filtered));
+    }, [filter, photos]);
+
+    // Navigation Logic
     const handleNext = useCallback(() => {
         if (selectedId === null) return;
-        const currentIndex = filteredPhotos.findIndex(p => p.id === selectedId);
-        const nextIndex = (currentIndex + 1) % filteredPhotos.length;
-        setSelectedId(filteredPhotos[nextIndex].id);
-    }, [selectedId, filteredPhotos]);
+        const currentIndex = displayPhotos.findIndex(p => p.id === selectedId);
+        const nextIndex = (currentIndex + 1) % displayPhotos.length;
+        setSelectedId(displayPhotos[nextIndex].id);
+    }, [selectedId, displayPhotos]);
 
     const handlePrev = useCallback(() => {
         if (selectedId === null) return;
-        const currentIndex = filteredPhotos.findIndex(p => p.id === selectedId);
-        const prevIndex = (currentIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
-        setSelectedId(filteredPhotos[prevIndex].id);
-    }, [selectedId, filteredPhotos]);
+        const currentIndex = displayPhotos.findIndex(p => p.id === selectedId);
+        const prevIndex = (currentIndex - 1 + displayPhotos.length) % displayPhotos.length;
+        setSelectedId(displayPhotos[prevIndex].id);
+    }, [selectedId, displayPhotos]);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -83,50 +109,73 @@ const Home = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, handleNext, handlePrev]);
 
+    const categories = ['All', ...new Set(photos.map(p => p.category))];
     const selectedPhoto = photos.find(p => p.id === selectedId);
 
     return (
-        <>
-            <div style={styles.filterContainer}>
-                {categories.map(category => (
-                    <button
-                        key={category}
-                        style={{
-                            ...styles.filterButton,
-                            ...(activeCategory === category ? styles.activeFilterButton : {})
-                        }}
-                        onClick={() => setActiveCategory(category)}
-                    >
-                        {category}
-                    </button>
-                ))}
-            </div>
+        <div style={styles.container}>
+            {/* Minimal Header */}
+            <header style={styles.header}>
+                {/* Left spacer for balance if needed, or Logo */}
+                <div style={{ width: '40px' }}></div>
 
-            <motion.div layout style={styles.grid}>
-                <AnimatePresence>
-                    {filteredPhotos.map((photo) => (
+                {/* Centered Filter Pills */}
+                <nav style={styles.nav}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setFilter(cat)}
+                            style={filter === cat ? styles.activeFilterButton : styles.filterButton}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </nav>
+
+                {/* Right Theme Toggle */}
+                <button onClick={toggleTheme} style={styles.themeBtn} aria-label="Toggle Theme">
+                    {theme === 'light' ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                    ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                    )}
+                </button>
+            </header>
+
+            {/* Clean Grid */}
+            <motion.div
+                style={styles.grid}
+                layout
+            >
+                <AnimatePresence mode='popLayout'>
+                    {displayPhotos.map((photo, index) => (
                         <motion.div
                             key={photo.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.4 }}
                             style={styles.item}
                             onClick={() => setSelectedId(photo.id)}
-                            layoutId={`card-${photo.id}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
+                            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                         >
-                            <motion.div style={styles.imageWrapper}>
-                                <motion.img 
-                                    src={photo.src} 
-                                    alt={photo.title} 
+                            <div style={styles.imageWrapper}>
+                                <img
+                                    src={photo.thumbnail || photo.src}
+                                    alt={photo.title}
                                     style={styles.image}
+                                    loading="lazy"
                                 />
-                            </motion.div>
+                                {/* Minimal Overlay - Only visible on hover */}
+                                <div style={styles.overlay}></div>
+                            </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
             </motion.div>
 
+            {/* Glassmorphism Lightbox */}
             <AnimatePresence>
                 {selectedId && selectedPhoto && (
                     <motion.div
@@ -135,195 +184,278 @@ const Home = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
                     >
-                        <motion.div style={styles.lightboxContentWrapper}>
-                            <motion.div 
-                                style={styles.lightboxContent}
-                                onClick={(e) => e.stopPropagation()}
-                                layoutId={`card-${selectedId}`}
-                            >
-                                <motion.img 
-                                    src={selectedPhoto.src} 
-                                    alt={selectedPhoto.title} 
-                                    style={{
-                                        ...styles.lightboxImage, 
-                                        aspectRatio: `${selectedPhoto.width} / ${selectedPhoto.height}`
-                                    }} 
-                                />
-                            </motion.div>
-                            <motion.div style={styles.metadata} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                        <motion.div
+                            style={styles.lightboxContent}
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ scale: 0.98, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.98, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        >
+                            <img
+                                src={selectedPhoto.src}
+                                alt={selectedPhoto.title}
+                                style={styles.lightboxImage}
+                            />
+
+                            {/* Glass Metadata Panel */}
+                            <div style={styles.metadata}>
                                 <h2 style={styles.metadataTitle}>{selectedPhoto.title}</h2>
                                 {selectedPhoto.exif && (
                                     <div style={styles.exifGrid}>
-                                        {selectedPhoto.exif.camera && !selectedPhoto.exif.camera.startsWith('Unknown') && <ExifItem label="Camera" value={selectedPhoto.exif.camera} />}
-                                        {selectedPhoto.exif.lens && !selectedPhoto.exif.lens.startsWith('Unknown') && <ExifItem label="Lens" value={selectedPhoto.exif.lens} />}
-                                        {selectedPhoto.exif.iso && <ExifItem label="ISO" value={selectedPhoto.exif.iso} />}
-                                        {selectedPhoto.exif.aperture && <ExifItem label="Aperture" value={selectedPhoto.exif.aperture} />}
-                                        {selectedPhoto.exif.shutter && <ExifItem label="Shutter" value={selectedPhoto.exif.shutter} />}
+                                        <ExifItem label="Camera" value={selectedPhoto.exif.camera} />
+                                        <ExifItem label="Lens" value={selectedPhoto.exif.lens} />
+                                        <ExifItem label="ISO" value={selectedPhoto.exif.iso} />
+                                        <ExifItem label="Aperture" value={selectedPhoto.exif.aperture} />
+                                        <ExifItem label="Shutter" value={selectedPhoto.exif.shutter} />
                                     </div>
                                 )}
-                            </motion.div>
+                            </div>
+
+                            {/* Navigation Arrows */}
+                            <button style={{ ...styles.navBtn, left: '30px' }} onClick={(e) => { e.stopPropagation(); handlePrev(); }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+                            </button>
+                            <button style={{ ...styles.navBtn, right: '30px' }} onClick={(e) => { e.stopPropagation(); handleNext(); }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+                            </button>
+                            <button style={styles.closeBtn} onClick={() => setSelectedId(null)}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
                         </motion.div>
-                        
-                        <button style={{...styles.navBtn, left: 'var(--spacing-lg)'}} onClick={(e) => { e.stopPropagation(); handlePrev(); }}>‹</button>
-                        <button style={{...styles.navBtn, right: 'var(--spacing-lg)'}} onClick={(e) => { e.stopPropagation(); handleNext(); }}>›</button>
-                        <button style={styles.closeBtn} onClick={() => setSelectedId(null)}>×</button>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </>
+
+            {/* Global Styles for CSS Variables & Scrollbar */}
+            <style>{`
+                body {
+                    background-color: var(--bg-color);
+                    color: var(--text-primary);
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                    transition: background-color 0.3s ease, color 0.3s ease;
+                    margin: 0;
+                }
+                ::-webkit-scrollbar { width: 0px; background: transparent; }
+                
+                /* Responsive Columns */
+                @media (max-width: 1200px) { .grid-container { column-count: 2 !important; } }
+                @media (max-width: 600px) { .grid-container { column-count: 1 !important; } }
+            `}</style>
+        </div>
     );
 };
 
-// Updated styles for Masonry Layout and Filtering
+const ExifItem = ({ label, value }) => {
+    if (!value || value.toString().startsWith('Unknown')) return null;
+    return (
+        <div style={styles.exifItem}>
+            <span style={styles.exifLabel}>{label}</span>
+            <span style={styles.exifValue}>{value}</span>
+        </div>
+    );
+};
+
 const styles = {
-    filterContainer: {
+    container: {
+        maxWidth: '1800px',
+        margin: '0 auto',
+        padding: '0 2rem 2rem 2rem',
+        minHeight: '100vh',
+    },
+    header: {
         display: 'flex',
-        justifyContent: 'center',
-        gap: 'var(--spacing-md)',
-        marginBottom: 'var(--spacing-lg)',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '2rem 0 3rem 0',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        backgroundColor: 'var(--bg-color)', // Opaque background for sticky header
+        transition: 'background-color 0.3s ease',
+    },
+    nav: {
+        display: 'flex',
+        gap: '0.5rem',
+        background: 'var(--btn-bg)',
+        padding: '0.3rem',
+        borderRadius: '999px',
+        backdropFilter: 'blur(20px)',
     },
     filterButton: {
         background: 'transparent',
-        border: '1px solid var(--border-color)',
+        border: 'none',
         borderRadius: '999px',
-        padding: 'var(--spacing-sm) var(--spacing-md)',
-        fontFamily: 'var(--font-family)',
-        fontSize: '0.9rem',
+        padding: '0.5rem 1.2rem',
+        color: 'var(--text-secondary)',
         cursor: 'pointer',
-        color: 'var(--text-color-secondary)',
+        fontFamily: 'inherit',
+        fontSize: '0.9rem',
+        fontWeight: '500',
         transition: 'all 0.2s ease',
     },
     activeFilterButton: {
-        color: 'var(--bg-color)',
-        background: 'var(--text-color-primary)',
-        borderColor: 'var(--text-color-primary)',
-    },
-    grid: {
-        columnCount: 3,
-        columnGap: 'var(--spacing-lg)',
-    },
-    item: {
-        breakInside: 'avoid',
-        marginBottom: 'var(--spacing-lg)',
+        background: 'var(--btn-bg-active)',
+        color: 'var(--btn-text-active)',
+        borderRadius: '999px',
+        padding: '0.5rem 1.2rem',
+        border: 'none',
         cursor: 'pointer',
-    },
-    imageWrapper: {
-        overflow: 'hidden',
-        borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-        width: '100%',
-    },
-    image: {
-        width: '100%',
-        height: 'auto',
-        display: 'block',
-    },
-    lightbox: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0,0,0,0.85)',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        flexDirection: 'column',
-        padding: 'var(--spacing-xl)',
-    },
-    lightboxContentWrapper: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    lightboxContent: {
-        position: 'relative',
-        width: 'auto',
-        height: 'auto',
-        maxHeight: '80vh',
-        maxWidth: '90vw',
-    },
-    lightboxImage: {
-        display: 'block',
-        width: 'auto',
-        height: 'auto',
-        maxHeight: '80vh',
-        maxWidth: '90vw',
-        borderRadius: '12px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-    },
-    metadata: {
-        marginTop: 'var(--spacing-lg)',
-        color: '#fff',
-        textAlign: 'center',
-        maxWidth: '600px',
-    },
-    metadataTitle: {
-        fontSize: '1.5rem',
-        fontWeight: '600',
-        color: '#fff',
-    },
-    exifGrid: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: 'var(--spacing-lg)',
-        marginTop: 'var(--spacing-md)',
-        color: 'var(--text-color-secondary)',
-    },
-    exifLabel: {
-        fontSize: '0.8rem',
-        color: '#888',
-        textTransform: 'uppercase',
-        display: 'block',
-    },
-    exifValue: {
+        fontFamily: 'inherit',
         fontSize: '0.9rem',
-        color: '#eee',
-        display: 'block',
+        fontWeight: '500',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
     },
-    navBtn: {
-        position: 'fixed',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        background: 'rgba(0,0,0,0.2)',
+    themeBtn: {
+        background: 'var(--btn-bg)',
         border: 'none',
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: '2.5rem',
-        fontWeight: '100',
-        cursor: 'pointer',
-        zIndex: 1001,
-        transition: 'background 0.2s, color 0.2s',
-        borderRadius: '50%',
-        width: '50px',
-        height: '50px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: '5px',
-    },
-    closeBtn: {
-        position: 'fixed',
-        top: 'var(--spacing-lg)',
-        right: 'var(--spacing-lg)',
-        background: 'rgba(0,0,0,0.2)',
-        border: 'none',
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: '1.5rem',
-        cursor: 'pointer',
-        zIndex: 1001,
-        transition: 'background 0.2s, color 0.2s',
         borderRadius: '50%',
         width: '40px',
         height: '40px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        color: 'var(--text-primary)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+    },
+    grid: {
+        columnCount: 3,
+        columnGap: '2rem',
+        className: 'grid-container', // Used for media queries in style tag
+    },
+    item: {
+        breakInside: 'avoid',
+        marginBottom: '2rem',
+        cursor: 'pointer',
+        borderRadius: '12px', // Apple-like smooth corners
+        overflow: 'hidden',
+    },
+    imageWrapper: {
+        position: 'relative',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        background: 'var(--btn-bg)', // Placeholder color
+    },
+    image: {
+        width: '100%',
+        height: 'auto',
+        display: 'block',
+        transition: 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    },
+    overlay: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0,0,0,0.05)', // Subtle darkening on hover
+        opacity: 0,
+        transition: 'opacity 0.3s',
+        pointerEvents: 'none',
+    },
+    lightbox: {
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        background: 'var(--lightbox-bg)',
+        backdropFilter: 'blur(20px)', // Strong blur for background
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '2rem',
+    },
+    lightboxContent: {
+        position: 'relative',
+        maxWidth: '1200px',
+        width: '100%',
+        maxHeight: '92vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
+    lightboxImage: {
+        maxWidth: '100%',
+        maxHeight: '70vh',
+        objectFit: 'contain',
+        borderRadius: '8px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    },
+    metadata: {
+        marginTop: '2rem',
+        textAlign: 'center',
+        color: 'var(--text-primary)',
+        background: 'var(--glass-bg)',
+        padding: '1.5rem 3rem',
+        borderRadius: '24px',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        maxWidth: '80%',
+    },
+    metadataTitle: {
+        fontSize: '1.2rem',
+        marginBottom: '1rem',
+        fontWeight: '600',
+        letterSpacing: '-0.01em',
+    },
+    exifGrid: {
+        display: 'flex',
+        gap: '2.5rem',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+    },
+    exifItem: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.2rem',
+    },
+    exifLabel: {
+        fontSize: '0.65rem',
+        color: 'var(--text-secondary)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        fontWeight: '600',
+    },
+    exifValue: {
+        fontSize: '0.9rem',
+        color: 'var(--text-primary)',
+        fontWeight: '400',
+    },
+    navBtn: {
+        position: 'absolute',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        color: 'var(--text-primary)',
+        cursor: 'pointer',
+        padding: '1rem',
+        borderRadius: '50%',
+        width: '56px',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.2s',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    },
+    closeBtn: {
+        position: 'absolute',
+        top: '-10px',
+        right: '10px',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        color: 'var(--text-primary)',
+        cursor: 'pointer',
+        padding: '0.8rem',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }
 };
 
