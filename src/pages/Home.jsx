@@ -285,16 +285,19 @@ const Home = () => {
                             />
 
                             <div className="metadata-panel" style={styles.metadata}>
-                                <h2 style={styles.metadataTitle}>{selectedPhoto.title}</h2>
-                                {selectedPhoto.exif && (
-                                    <div style={styles.exifGrid}>
-                                        <ExifItem label="Camera" value={selectedPhoto.exif.camera} />
-                                        <ExifItem label="Lens" value={selectedPhoto.exif.lens} />
-                                        <ExifItem label="ISO" value={selectedPhoto.exif.iso} />
-                                        <ExifItem label="Aperture" value={selectedPhoto.exif.aperture} />
-                                        <ExifItem label="Shutter" value={selectedPhoto.exif.shutter} />
-                                    </div>
-                                )}
+                                <div style={styles.exifGrid}>
+                                    <span style={styles.metadataTitle}>{selectedPhoto.title}</span>
+                                    {selectedPhoto.exif && (
+                                        <>
+                                            <span style={styles.separator}>|</span>
+                                            <ExifItem value={selectedPhoto.exif.camera} />
+                                            <ExifItem value={selectedPhoto.exif.lens} />
+                                            <ExifItem value={selectedPhoto.exif.iso ? `ISO ${selectedPhoto.exif.iso}` : ''} />
+                                            <ExifItem value={selectedPhoto.exif.aperture} />
+                                            <ExifItem value={selectedPhoto.exif.shutter ? `${selectedPhoto.exif.shutter}s` : ''} />
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             <button className="nav-btn nav-left" style={{ ...styles.navBtn, left: '30px' }} onClick={(e) => { e.stopPropagation(); handlePrev(); }}>
@@ -414,13 +417,10 @@ const Home = () => {
     );
 };
 
-const ExifItem = ({ label, value }) => {
+const ExifItem = ({ value }) => {
     if (!value || value.toString().startsWith('Unknown')) return null;
     return (
-        <div style={styles.exifItem}>
-            <span style={styles.exifLabel}>{label}</span>
-            <span style={styles.exifValue}>{value}</span>
-        </div>
+        <span style={styles.exifValue}>{value}</span>
     );
 };
 
@@ -549,45 +549,38 @@ const styles = {
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
     },
     metadata: {
-        marginTop: '2rem',
-        textAlign: 'center',
+        marginTop: '1.5rem', // Push below image
         color: 'var(--text-primary)',
         background: 'var(--glass-bg)',
-        padding: '1.5rem 3rem',
-        borderRadius: '24px',
+        padding: '0.6rem 1.2rem',
+        borderRadius: '999px',
         backdropFilter: 'blur(20px)',
         border: '1px solid var(--glass-border)',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        maxWidth: '80%',
+        maxWidth: '90%',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        zIndex: 10,
+        // Removed absolute positioning
     },
     metadataTitle: {
-        fontSize: '1.2rem',
-        marginBottom: '1rem',
+        fontSize: '0.9rem',
         fontWeight: '600',
-        letterSpacing: '-0.01em',
+        marginRight: '0.5rem',
+    },
+    separator: {
+        margin: '0 0.5rem',
+        opacity: 0.3,
     },
     exifGrid: {
         display: 'flex',
-        gap: '2.5rem',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-    },
-    exifItem: {
-        display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        gap: '0.2rem',
-    },
-    exifLabel: {
-        fontSize: '0.65rem',
-        color: 'var(--text-secondary)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        fontWeight: '600',
+        gap: '0.8rem',
+        fontSize: '0.85rem',
     },
     exifValue: {
-        fontSize: '0.9rem',
-        color: 'var(--text-primary)',
+        color: 'var(--text-secondary)',
         fontWeight: '400',
     },
     navBtn: {
