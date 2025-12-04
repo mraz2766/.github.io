@@ -383,10 +383,14 @@ const Home = () => {
                         padding: 1rem !important;
                         width: 90% !important;
                         margin-top: 1rem !important;
-                        background: rgba(20,20,20,0.85) !important; /* Always dark bg for readability on mobile */
-                        color: #fff !important;
+                    .metadata-panel {
+                        padding: 0.8rem 1.2rem !important;
+                        width: auto !important;
+                        max-width: 90% !important;
+                        margin-top: 1rem !important;
+                        /* Removed dark background override to match PC style */
                     }
-                    .metadata-panel h2 { font-size: 1.1rem !important; margin-bottom: 0.5rem !important; }
+                    .metadata-panel h2 { font-size: 1rem !important; margin-bottom: 0 !important; }
                     
                     /* Nav Buttons Mobile */
                     .nav-btn {
